@@ -179,7 +179,12 @@ def evaluate_policy(
         float: The success rate of the policy, defined as the proportion of successful episodes.
     """
 
-    from src.prepare import graph_transform_obs, apply_transformations, TRANSFORMATIONS
+    from src.prepare import (
+        graph_transform_obs,
+        apply_transformations,
+        TRANSFORMATIONS,
+        get_mlp_features,
+    )
 
     obs_list = deque(maxlen=config["prepare"]["window_size"])
     # Fill obs_list with zeros
@@ -193,11 +198,8 @@ def evaluate_policy(
         if config["train"]["model"] != "MLP":
             obs, shape = graph_transform_obs(np.array(obs_list).squeeze(1), env=env)
         else:
-            obs, shape = (
-                np.array(obs_list).squeeze(1),
-                np.array(obs_list).squeeze(1).shape,
-            )
-        obs = apply_transformations(obs, config).reshape(shape)
+            obs, shape = get_mlp_features(env, np.array(obs_list).squeeze(1))
+        obs = apply_transformations(obs, config).reshape(shape).squeeze()
         obs = th.tensor(obs, device=device).float().unsqueeze(0)
         # create batched graph
         if config["train"]["model"] != "MLP":

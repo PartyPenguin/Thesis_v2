@@ -200,6 +200,31 @@ def apply_transformations(array, config: dict):
     return array
 
 
+def get_mlp_features(env: BaseEnv, obs: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    joint_positions = obs[:, :9]
+    joint_velocities = obs[:, 9:18]
+    is_grasped = obs[:, 18:19]
+    tcp_pose = obs[:, 19:26]
+    goal_position = obs[:, 26:29]
+    obj_pose = obs[:, 29:36]
+    tcp_to_obj_pos = obs[:, 36:39]
+    obj_to_goal_pos = obs[:, 39:42]
+
+    obs = np.hstack(
+        [
+            joint_positions,
+            joint_velocities,
+            is_grasped,
+            tcp_pose,
+            goal_position,
+            obj_pose,
+            tcp_to_obj_pos,
+            obj_to_goal_pos,
+        ]
+    )
+    return obs, obs[:, np.newaxis].shape
+
+
 def prepare(config: dict):
     env: BaseEnv = gym.make(
         id=config["env"]["env_id"],
@@ -212,7 +237,7 @@ def prepare(config: dict):
     if config["train"]["model"] != "MLP":
         obs, obs_shape = graph_transform_obs(obs, env)
     else:
-        obs, obs_shape = obs, obs[:, np.newaxis].shape
+        obs, obs_shape = get_mlp_features(env, obs)
     obs = apply_transformations(obs, config).reshape(obs_shape)
 
     # Create a directory to save the prepared data

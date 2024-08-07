@@ -83,15 +83,15 @@ def train_step(policy, data, optim, loss_fn, env, device, config):
     #     q_pos, pred_actions, env=env, device=device
     # ).float()
 
-    ef_pos, ef_rot = compute_fk(q_pos + pred_actions, env=env, device=device)
-    ef_pos_true, ef_rot_true = compute_fk(q_pos + actions, env=env, device=device)
-    ef_pos = ef_pos
-    ef_pos_true = ef_pos_true
+    # ef_pos, ef_rot = compute_fk(q_pos + pred_actions, env=env, device=device)
+    # ef_pos_true, ef_rot_true = compute_fk(q_pos + actions, env=env, device=device)
+    # ef_pos = ef_pos
+    # ef_pos_true = ef_pos_true
 
-    ef_rot = R.from_quat(ef_rot.detach().cpu().numpy())
-    ef_rot_true = R.from_quat(ef_rot_true.detach().cpu().numpy())
-    rel_rot = ef_rot.inv() * ef_rot_true
-    angle = th.as_tensor(rel_rot.magnitude()).to(device).float()
+    # ef_rot = R.from_quat(ef_rot.detach().cpu().numpy())
+    # ef_rot_true = R.from_quat(ef_rot_true.detach().cpu().numpy())
+    # rel_rot = ef_rot.inv() * ef_rot_true
+    # angle = th.as_tensor(rel_rot.magnitude()).to(device).float()
 
     # nullspace_norm = th.norm(nullspace_proj, dim=1)
     # default_pos_error = th.abs((DEFAULT_Q_POS[:-1] - q_pos)).float()
@@ -100,8 +100,8 @@ def train_step(policy, data, optim, loss_fn, env, device, config):
         loss_fn(actions, pred_actions)
         # + 0.0005 * nullspace_norm.mean()
         # + 0.0005 * (nullspace_proj.squeeze()[:, :-1] @ default_pos_error.T).mean()
-        + loss_fn(ef_pos, ef_pos_true)
-        + 0.1 * angle.mean()
+        # + loss_fn(ef_pos, ef_pos_true)
+        # + 0.1 * angle.mean()
         + nn.BCELoss()((pred_gripper.squeeze() + 1) / 2, (actions[:, -1] + 1) / 2)
     )
     loss.backward()
@@ -158,7 +158,7 @@ def train(config: dict):
     )
 
     while steps < config["train"]["iterations"]:
-        wandb.watch(policy, criterion=loss_fn, log="all", log_freq=10)
+        wandb.watch(policy, criterion=loss_fn, log="all", log_freq=100)
         epoch_loss = 0
         for batch in dataloader:
             steps += 1
